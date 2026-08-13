@@ -1,0 +1,4 @@
+[silencedetect @ 0x14b7042d0] silence_start: 61.5
+[silencedetect @ 0x14b7042d0] silence_end: 63.25 | silence_duration: 1.75
+[silencedetect @ 0x14b7042d0] silence_start: 180.0
+[silencedetect @ 0x14b7042d0] silence_end: 181.5 | silence_duration: 1.5

@@ -1,0 +1,35 @@
+{
+  "note": "A hugely popular Boiler Room set must not beat the actual single.",
+  "query": "Fred again.. & Blanco solo",
+  "expected_duration": null,
+  "expect_winner": "ART_SOLO",
+  "expect_ambiguous": false,
+  "entries": [
+    {
+      "id": "LIVE_SOLO",
+      "title": "Fred again.. | Boiler Room: London",
+      "channel": "Boiler Room",
+      "uploader": "Boiler Room",
+      "description": "recorded live",
+      "duration": 3600,
+      "categories": ["Music"],
+      "view_count": 20000000,
+      "was_live": true,
+      "thumbnails": [{ "width": 1280, "height": 720 }]
+    },
+    {
+      "id": "ART_SOLO",
+      "title": "solo",
+      "channel": "Fred again.. - Topic",
+      "uploader": "Fred again.. - Topic",
+      "description": "Provided to YouTube by Atlantic Records UK\n\nsolo",
+      "duration": 195,
+      "categories": ["Music"],
+      "view_count": 800000,
+      "artist": "Fred again.., Blanco",
+      "track": "solo",
+      "album": "solo",
+      "thumbnails": [{ "width": 600, "height": 600 }]
+    }
+  ]
+}

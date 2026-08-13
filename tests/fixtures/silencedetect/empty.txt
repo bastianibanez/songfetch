@@ -1,0 +1,2 @@
+ffmpeg version 7.1 Copyright (c) 2000-2024 the FFmpeg developers
+size=N/A time=00:02:55.00 bitrate=N/A speed= 601x

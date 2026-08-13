@@ -1,0 +1,38 @@
+{
+  "note": "Two near-identical Topic uploads of the same track. The picker must refuse to guess and hand the choice to the user.",
+  "query": "Levity Front to Back",
+  "expected_duration": null,
+  "expect_winner": null,
+  "expect_ambiguous": true,
+  "expect_reason_contains": "top two within",
+  "entries": [
+    {
+      "id": "ART_FTB_A",
+      "title": "Front to Back",
+      "channel": "Levity - Topic",
+      "uploader": "Levity - Topic",
+      "description": "Provided to YouTube by A Label\n\nFront to Back",
+      "duration": 210,
+      "categories": ["Music"],
+      "view_count": 100000,
+      "artist": "Levity",
+      "track": "Front to Back",
+      "album": "Front to Back",
+      "thumbnails": [{ "width": 544, "height": 544 }]
+    },
+    {
+      "id": "ART_FTB_B",
+      "title": "Front to Back",
+      "channel": "Levity - Topic",
+      "uploader": "Levity - Topic",
+      "description": "Provided to YouTube by A Label\n\nFront to Back",
+      "duration": 211,
+      "categories": ["Music"],
+      "view_count": 90000,
+      "artist": "Levity",
+      "track": "Front to Back",
+      "album": "Front to Back",
+      "thumbnails": [{ "width": 544, "height": 544 }]
+    }
+  ]
+}

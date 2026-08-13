@@ -1,0 +1,7 @@
+ffmpeg version 7.1 Copyright (c) 2000-2024 the FFmpeg developers
+Input #0, matroska,webm, from 'track.opus':
+  Duration: 00:03:15.02, start: 0.000000, bitrate: 136 kb/s
+Stream mapping:
+  Stream #0:0 -> #0:0 (opus (native) -> pcm_s16le (native))
+[silencedetect @ 0x14b7042d0] silence_start: 192.418
+size=N/A time=00:03:15.02 bitrate=N/A speed= 512x

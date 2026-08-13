@@ -1,0 +1,37 @@
+{
+  "note": "Two legitimate Topic uploads of the same song; the known release duration picks the radio edit over the extended mix.",
+  "query": "AYYBO RIZZ",
+  "expected_duration": 168,
+  "expect_winner": "ART_RIZZ",
+  "expect_ambiguous": false,
+  "entries": [
+    {
+      "id": "ART_RIZZ_EXT",
+      "title": "RIZZ (Extended Mix)",
+      "channel": "AYYBO - Topic",
+      "uploader": "AYYBO - Topic",
+      "description": "Provided to YouTube by A Label\n\nRIZZ (Extended Mix)",
+      "duration": 400,
+      "categories": ["Music"],
+      "view_count": 5000,
+      "artist": "AYYBO",
+      "track": "RIZZ (Extended Mix)",
+      "album": "RIZZ",
+      "thumbnails": [{ "width": 544, "height": 544 }]
+    },
+    {
+      "id": "ART_RIZZ",
+      "title": "RIZZ",
+      "channel": "AYYBO - Topic",
+      "uploader": "AYYBO - Topic",
+      "description": "Provided to YouTube by A Label\n\nRIZZ",
+      "duration": 168,
+      "categories": ["Music"],
+      "view_count": 200000,
+      "artist": "AYYBO",
+      "track": "RIZZ",
+      "album": "RIZZ",
+      "thumbnails": [{ "width": 544, "height": 544 }]
+    }
+  ]
+}

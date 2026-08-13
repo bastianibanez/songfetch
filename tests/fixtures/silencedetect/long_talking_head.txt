@@ -1,0 +1,5 @@
+ffmpeg version 7.1 Copyright (c) 2000-2024 the FFmpeg developers
+[silencedetect @ 0x14b7042d0] silence_start: 0
+[silencedetect @ 0x14b7042d0] silence_end: 22.615 | silence_duration: 22.615
+[silencedetect @ 0x14b7042d0] silence_start: 240.11
+[silencedetect @ 0x14b7042d0] silence_end: 241.02 | silence_duration: 0.91

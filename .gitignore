@@ -1,0 +1,38 @@
+# macOS / exFAT droppings
+._*
+.DS_Store
+.Spotlight-V100
+.Trashes
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+build/
+dist/
+
+# Tooling caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.claude/
+
+# Downloaded audio and anything yt-dlp leaves behind
+*.mp3
+*.m4a
+*.opus
+*.webm
+*.mkv
+*.part
+*.ytdl
+*.temp.*
+
+# Output / library directories
+output/
+downloads/
+songs/
+
+# Runtime catalog (user library state, not source)
+/catalog.json

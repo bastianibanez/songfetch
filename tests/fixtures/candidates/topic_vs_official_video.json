@@ -1,0 +1,57 @@
+{
+  "note": "The Topic art-track must beat the official music video, the lyric video and the sped-up edit.",
+  "query": "Dom Dolla & Clementine Douglas Miracle Maker",
+  "expected_duration": null,
+  "expect_winner": "ART_MM",
+  "expect_ambiguous": false,
+  "entries": [
+    {
+      "id": "MV_MM",
+      "title": "Dom Dolla & Clementine Douglas - Miracle Maker (Official Music Video)",
+      "channel": "Dom Dolla",
+      "uploader": "Dom Dolla",
+      "description": "The official video for Miracle Maker. Directed by someone.",
+      "duration": 200,
+      "categories": ["Music"],
+      "view_count": 20000000,
+      "thumbnails": [{ "width": 1280, "height": 720 }]
+    },
+    {
+      "id": "ART_MM",
+      "title": "Miracle Maker",
+      "channel": "Dom Dolla - Topic",
+      "uploader": "Dom Dolla - Topic",
+      "description": "Provided to YouTube by Three Six Zero Recordings\n\nMiracle Maker",
+      "duration": 175,
+      "categories": ["Music"],
+      "view_count": 900000,
+      "artist": "Dom Dolla, Clementine Douglas",
+      "track": "Miracle Maker",
+      "album": "Miracle Maker",
+      "release_year": 2023,
+      "thumbnails": [{ "width": 544, "height": 544 }]
+    },
+    {
+      "id": "LYR_MM",
+      "title": "Dom Dolla - Miracle Maker (Lyric Video)",
+      "channel": "Dance Uploads",
+      "uploader": "Dance Uploads",
+      "description": "lyrics below",
+      "duration": 178,
+      "categories": ["Music"],
+      "view_count": 500000,
+      "thumbnails": [{ "width": 1280, "height": 720 }]
+    },
+    {
+      "id": "SPED_MM",
+      "title": "Miracle Maker (Sped Up)",
+      "channel": "Speed Music",
+      "uploader": "Speed Music",
+      "description": "",
+      "duration": 150,
+      "categories": ["Music"],
+      "view_count": 100000,
+      "thumbnails": [{ "width": 1280, "height": 720 }]
+    }
+  ]
+}

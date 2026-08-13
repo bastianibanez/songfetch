@@ -1,0 +1,173 @@
+[
+  {
+    "note": "unique title, exact hit",
+    "query": "Tlalnepantla",
+    "expect_top": ["tlalnepantla"],
+    "expect_count": 1
+  },
+  {
+    "note": "diacritics folded: korper matches Mein Körper gehört nicht mehr mir",
+    "query": "korper",
+    "expect_top": ["mein-korper"],
+    "expect_count": 1
+  },
+  {
+    "note": "grave accent folded: sored matches geods sorèd",
+    "query": "sored",
+    "expect_top": ["the-world-keeps-burning"],
+    "expect_count": 1
+  },
+  {
+    "note": "registered-trademark symbol dropped: swedm matches swedm®",
+    "query": "swedm",
+    "expect_top": ["far-from-home-karan"],
+    "expect_count": 1
+  },
+  {
+    "note": "CJK survives normalization",
+    "query": "火炎",
+    "expect_top": ["tuki-tuki"],
+    "expect_count": 1
+  },
+  {
+    "note": "artist search returns the whole Ninajirachi cluster, title-ordered",
+    "query": "ninajirachi",
+    "expect_top": ["csirac", "ipod-touch", "london-song"],
+    "expect_count": 3
+  },
+  {
+    "note": "album search returns the same cluster",
+    "query": "I Love My Computer",
+    "expect_top": ["csirac", "ipod-touch", "london-song"],
+    "expect_count": 3
+  },
+  {
+    "note": "album search, two-track album",
+    "query": "Travmkinder",
+    "expect_top": ["living-in-my-mind", "mein-korper"],
+    "expect_count": 2
+  },
+  {
+    "note": "channel-as-artist for the S6789 rips",
+    "query": "S6789",
+    "expect_top": ["talk-to-me-vip", "quest-vault", "move-ting", "far-from-home-karan"],
+    "expect_count": 4
+  },
+  {
+    "note": "the 'move' ambiguity set: exact title wins, then prefixes, then contains, then artist",
+    "query": "move",
+    "expect_top": ["move-lnrt", "move-like-this", "move-on", "move-ting", "dont-want-none"],
+    "expect_count": 5
+  },
+  {
+    "note": "numeric title",
+    "query": "100",
+    "expect_top": ["hundred"],
+    "expect_count": 1
+  },
+  {
+    "note": "numeric title, no collision with 95 / 2020",
+    "query": "925",
+    "expect_top": ["nine-two-five"],
+    "expect_count": 1
+  },
+  {
+    "note": "apostrophe deleted, not turned into a space",
+    "query": "aint no party",
+    "expect_top": ["aint-no-party"],
+    "expect_count": 1
+  },
+  {
+    "note": "apostrophe in the middle of a word",
+    "query": "dont want none",
+    "expect_top": ["dont-want-none"],
+    "expect_count": 1
+  },
+  {
+    "note": "punctuation-blind title match: 'after' finds A.F.T.E.R",
+    "query": "after",
+    "expect_top": ["after"]
+  },
+  {
+    "note": "punctuation-blind, spaces removed: talktome",
+    "query": "talktome",
+    "expect_top": ["talk-to-me", "talk-to-me-vip"],
+    "expect_count": 2
+  },
+  {
+    "note": "near-duplicate pair stays distinguishable",
+    "query": "Talk To Me VIP",
+    "expect_top": ["talk-to-me-vip"],
+    "expect_absent": ["talk-to-me"]
+  },
+  {
+    "note": "multi-token, cross-field, any order",
+    "query": "four tet skrillex",
+    "expect_top": ["talk-to-me-vip", "talk-to-me"],
+    "expect_absent": ["glow"],
+    "expect_count": 2
+  },
+  {
+    "note": "typo tolerance on the artist name",
+    "query": "skrilex",
+    "expect_contains": ["taka", "bass-dhol", "diwali", "hit-me-where-it-hurts-x"],
+    "expect_absent": ["true-love-waits", "britney"]
+  },
+  {
+    "note": "artist cluster with exact and partial artist hits",
+    "query": "ayybo",
+    "expect_top": ["move-like-this", "rizz", "hypnosis", "dont-want-none"],
+    "expect_count": 4
+  },
+  {
+    "note": "artist with trailing dots",
+    "query": "fred again",
+    "expect_contains": ["solo", "i-luv-u", "talk-of-the-town", "glow"],
+    "expect_count": 4
+  },
+  {
+    "note": "artist appearing in several collabs",
+    "query": "chris lake",
+    "expect_contains": ["toxic", "more-baby", "turn-off-the-lights-cages", "nine-two-five"],
+    "expect_count": 4
+  },
+  {
+    "note": "two-track artist, title-ordered",
+    "query": "levity",
+    "expect_top": ["flip-it", "front-to-back"],
+    "expect_count": 2
+  },
+  {
+    "note": "slash in artist name is a separator, not a glue",
+    "query": "arco",
+    "expect_absent": ["ocean"]
+  },
+  {
+    "note": "underscore is a separator",
+    "query": "qwerty",
+    "expect_top": ["hundred"],
+    "expect_count": 1
+  },
+  {
+    "note": "substring of a long rip title",
+    "query": "quest vault",
+    "expect_top": ["quest-vault"],
+    "expect_count": 1
+  },
+  {
+    "note": "empty query returns the whole catalog, stable order",
+    "query": "",
+    "expect_top": ["hundred", "nine-two-five"],
+    "expect_count": 77
+  },
+  {
+    "note": "whitespace-only query behaves like empty",
+    "query": "   ",
+    "expect_count": 77
+  },
+  {
+    "note": "no match at all",
+    "query": "zzqqxxvv",
+    "expect_count": 0
+  }
+]

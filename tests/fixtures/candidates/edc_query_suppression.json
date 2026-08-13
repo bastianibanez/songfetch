@@ -1,0 +1,35 @@
+{
+  "note": "The live/festival penalty must be suppressed when the user's own query contains the trigger word. 'Quest Vault [ISOxo Played @ EDC Mexico 2024]' is the wanted track, not a decoy.",
+  "query": "S6789 Skrillex & ISOxo - Quest Vault [ISOxo Played @ EDC Mexico 2024]",
+  "expected_duration": null,
+  "expect_winner": "RIP_QV",
+  "expect_ambiguous": false,
+  "expect_reason_contains": "live suppressed",
+  "entries": [
+    {
+      "id": "RIP_QV",
+      "title": "Skrillex & ISOxo - Quest Vault [ISOxo Played @ EDC Mexico 2024]",
+      "channel": "S6789",
+      "uploader": "S6789",
+      "description": "ripped from the EDC Mexico stream",
+      "duration": 210,
+      "categories": ["Music"],
+      "view_count": 30000,
+      "thumbnails": [{ "width": 1280, "height": 720 }]
+    },
+    {
+      "id": "ART_OTHER",
+      "title": "Quest",
+      "channel": "Some Artist - Topic",
+      "uploader": "Some Artist - Topic",
+      "description": "Provided to YouTube by A Label\n\nQuest",
+      "duration": 200,
+      "categories": ["Music"],
+      "view_count": 1000,
+      "artist": "Some Artist",
+      "track": "Quest",
+      "album": "Quest",
+      "thumbnails": [{ "width": 544, "height": 544 }]
+    }
+  ]
+}

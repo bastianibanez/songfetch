@@ -1,0 +1,21 @@
+{
+  "note": "Nothing in the result set is plausibly the track. The picker must refuse rather than download a vlog.",
+  "query": "cacomixtle Tlalnepantla",
+  "expected_duration": null,
+  "expect_winner": null,
+  "expect_ambiguous": true,
+  "expect_reason_contains": "below",
+  "entries": [
+    {
+      "id": "VLOG_TL",
+      "title": "Tlalnepantla vlog - un día en la ciudad",
+      "channel": "Random Vlogs",
+      "uploader": "Random Vlogs",
+      "description": "vlog diario",
+      "duration": 500,
+      "categories": ["People & Blogs"],
+      "view_count": 100,
+      "thumbnails": [{ "width": 1280, "height": 720 }]
+    }
+  ]
+}

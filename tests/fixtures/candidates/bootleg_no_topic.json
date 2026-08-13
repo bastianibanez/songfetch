@@ -1,0 +1,43 @@
+{
+  "note": "A flip that has no Topic upload at all. The channel rip must win over the official video of the original and over a festival set.",
+  "query": "Skrillex swedm Habstrakt Far From Home KARAN Flip",
+  "expected_duration": 200,
+  "expect_winner": "RIP_FFH",
+  "expect_ambiguous": false,
+  "entries": [
+    {
+      "id": "MV_FFH",
+      "title": "Skrillex - Far From Home (Official Video)",
+      "channel": "Skrillex",
+      "uploader": "Skrillex",
+      "description": "official video",
+      "duration": 230,
+      "categories": ["Music"],
+      "view_count": 5000000,
+      "thumbnails": [{ "width": 1280, "height": 720 }]
+    },
+    {
+      "id": "RIP_FFH",
+      "title": "Skrillex, swedm® & Habstrakt - Far From Home (Feat. bladee) (KARAN! Flip)",
+      "channel": "S6789",
+      "uploader": "S6789",
+      "description": "flip by KARAN!",
+      "duration": 200,
+      "categories": ["Music"],
+      "view_count": 45000,
+      "thumbnails": [{ "width": 1280, "height": 720 }]
+    },
+    {
+      "id": "LIVE_FFH",
+      "title": "Skrillex @ Ultra Music Festival 2024 (Full Set)",
+      "channel": "Ultra Music",
+      "uploader": "Ultra Music",
+      "description": "full broadcast",
+      "duration": 3600,
+      "categories": ["Music"],
+      "view_count": 3000000,
+      "was_live": true,
+      "thumbnails": [{ "width": 1280, "height": 720 }]
+    }
+  ]
+}
