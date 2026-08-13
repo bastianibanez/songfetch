@@ -1,4 +1,6 @@
-# ytmp3
+# songfetch
+
+The installed command is `ytmp3` (the Python package kept its original name).
 
 Search a track catalog in a TUI, pick tracks, get MP3s that are actually the
 song — not the music video, not a remix you didn't ask for, and not thirty
