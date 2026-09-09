@@ -149,7 +149,7 @@ RESULTS = [
 def stub_web(monkeypatch):
     calls: list[str] = []
 
-    def fake(query, limit=6, cookies_from_browser="", cookies_file=""):
+    def fake(query, limit=6, cookies_from_browser="", cookies_file="", cancel=None):
         calls.append(query)
         return list(RESULTS)
 

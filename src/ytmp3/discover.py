@@ -13,9 +13,14 @@ from __future__ import annotations
 
 import re
 
+from .cache import TTLCache, normalize_query
 from .models import Candidate, ScoredCandidate, Track
-from .probe import find_candidates
+from .probe import Cancel, find_candidates
 from .ranking import rank
+
+# Module-level on purpose: the TUI fires a search on every settled keystroke,
+# and retyping a query it already ran should not cost ten seconds again.
+_SEARCH_CACHE = TTLCache()
 
 # Ids of tracks discovered on the web are namespaced by video id: a slug built
 # from artist/title could collide with a hand-written catalog entry, and the
@@ -109,18 +114,31 @@ def web_search(
     limit: int = 6,
     cookies_from_browser: str = "",
     cookies_file: str = "",
+    cancel: Cancel | None = None,
 ) -> list[ScoredCandidate]:
     """Search YouTube Music + YouTube for `query`, best first.
 
     Blocking (yt-dlp is a subprocess); callers on the event loop must push it
-    through a thread. Raises `probe.ProbeError` when both sources fail.
+    through a thread. Raises `probe.ProbeError` when both sources fail, and
+    `probe.Cancelled` when `cancel` fires while the search is in flight.
+
+    Repeating a query inside the session is free: results are cached under a
+    normalized key, so "Bicep  GLUE" hits what "bicep glue" already paid for.
     """
+    key = (normalize_query(query), limit)
+    cached = _SEARCH_CACHE.get(key)
+    if cached is not None:
+        return cached
+
     candidates: list[Candidate] = find_candidates(
         query,
         limit=limit,
         cookies_from_browser=cookies_from_browser,
         cookies_file=cookies_file,
+        cancel=cancel,
     )
     # No expected duration: a free-text query carries no reference length, so
     # `rank` falls back to rejecting only the obviously-wrong shapes.
-    return rank(candidates, query, None)
+    ranked = rank(candidates, query, None)
+    _SEARCH_CACHE.set(key, ranked)
+    return ranked

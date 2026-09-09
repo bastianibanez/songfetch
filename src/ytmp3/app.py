@@ -14,7 +14,7 @@ from textual.screen import ModalScreen
 from textual.widgets import DataTable, Footer, Header, Input, OptionList, Static
 from textual.widgets.option_list import Option
 
-from . import discover
+from . import discover, probe
 from .catalog import add_tracks, resolve_catalog, scan_existing
 from .models import Candidate, DownloadJob, JobState, ScoredCandidate, Track
 from .pipeline import Options, jobs_for, run_all
@@ -129,6 +129,10 @@ class YtMp3App(App[None]):
         self.web_status: str = ""
         self.web_tracks: list[Track] = []
         self._web_timer = None
+        # Textual's `exclusive` worker stops awaiting the old search but cannot
+        # reach into its yt-dlp processes; this token can, and a search that is
+        # a dozen subprocesses wide has to be killed, not just ignored.
+        self._web_cancel: probe.Cancel | None = None
 
     # -- layout ------------------------------------------------------------
 
@@ -347,10 +351,18 @@ class YtMp3App(App[None]):
         `exclusive` means a newer query cancels this one, but a cancellation
         can land after yt-dlp has already returned, so every write back to the
         UI re-checks that `query` is still the one on screen.
+
+        Cancelling also kills the search's yt-dlp processes. Leaving them to
+        finish would have the abandoned query competing for bandwidth with the
+        one the user is actually waiting on.
         """
         if self._web_timer is not None:
             self._web_timer.stop()
             self._web_timer = None
+
+        if self._web_cancel is not None:
+            self._web_cancel.cancel()
+        cancel = self._web_cancel = probe.Cancel()
 
         self.web_query = query
         self.web_tracks = []
@@ -364,7 +376,11 @@ class YtMp3App(App[None]):
                 self.opts.search_limit,
                 self.opts.cookies_from_browser,
                 self.opts.cookies_file,
+                cancel,
             )
+        except probe.Cancelled:
+            # Superseded by a newer query, which owns the header from here.
+            return
         except Exception as exc:  # noqa: BLE001 - shown in the header, not swallowed
             if self.web_query == query:
                 self.web_status = f"failed — {type(exc).__name__}: {exc}"

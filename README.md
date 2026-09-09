@@ -87,6 +87,12 @@ ordinary catalog entry from then on.
 
 Automatic fallback is what `--no-web-fallback` turns off; `ctrl+f` still works.
 
+A web search takes about ten seconds. Both sources are listed in one request
+each, concurrently, and every result is then looked up in full — in parallel —
+for the fields ranking needs. Repeating a query inside the same session is
+free, and typing over an in-flight search kills its yt-dlp processes rather
+than leaving them running against the query you already abandoned.
+
 Status column: `·` pending · `✓` already on disk · `⋯` searching · `?` needs a
 manual pick · `↓` downloading · `✂` trimming · `♪` done · `✗` failed.
 
@@ -117,8 +123,8 @@ Verify with `yt-dlp -v <url> 2>&1 | grep "JS runtimes"` — it should not say `n
 ## Testing
 
 ```bash
-uv run python -m pytest -q          # 157 tests, no network
-uv run python -m pytest -q -m network   # live YouTube (slow, flaky)
+uv run python -m pytest -q          # 169 tests, no network
+uv run python -m pytest -q -m network   # live YouTube (~10s a query)
 ```
 
 Use `python -m pytest`, not `uv run pytest` — the bare command can resolve to a
@@ -144,7 +150,8 @@ src/ytmp3/
   trim.py       head-offset decision                  (pure)
   discover.py   free-text web search -> Track         (parsing is pure)
   catalog.py    catalog JSON + already-on-disk scan
-  probe.py      yt-dlp search (YT Music + YouTube)
+  cache.py      session memo for repeated web searches (pure)
+  probe.py      yt-dlp search (YT Music + YouTube): list flat, hydrate wide
   encode.py     fetch, silence probe, single transcode
   pipeline.py   orchestration, 3 tracks at a time
   app.py        Textual TUI

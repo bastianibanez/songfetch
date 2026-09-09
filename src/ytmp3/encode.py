@@ -2,9 +2,14 @@
 
 from __future__ import annotations
 
+import atexit
 import json
+import os
 import shutil
 import subprocess
+import sys
+import tempfile
+import threading
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -47,6 +52,71 @@ def _run(cmd: list[str], timeout: int, what: str) -> subprocess.CompletedProcess
     return proc
 
 
+_COOKIE_LOCK = threading.Lock()
+_COOKIE_EXPORTS: dict[str, str] = {}
+
+
+def _export_browser_cookies(browser: str) -> str:
+    """Dump a browser's cookie jar to a private file once per process.
+
+    `--cookies-from-browser` re-reads and decrypts the browser's cookie store
+    on *every* yt-dlp invocation -- about a second each. Search used to be one
+    invocation, so that second was invisible; it is now a listing per source
+    plus a lookup per result, and paying it a dozen times is most of a search.
+
+    Exporting once and passing the resulting file costs the same second on the
+    first call and nothing afterwards. `ytsearch0:` makes yt-dlp do the cookie
+    work and then no network work at all -- it writes the jar out on exit.
+
+    Returns "" if the export fails, which sends the caller back to the
+    per-invocation flag: slower, but never worse than not authenticating.
+
+    The file holds live session cookies. It is written 0600 inside a private
+    temp directory and removed at exit; nothing else is done with it.
+    """
+    with _COOKIE_LOCK:
+        cached = _COOKIE_EXPORTS.get(browser)
+        if cached is not None:
+            return cached
+
+        path = ""
+        try:
+            tmpdir = tempfile.mkdtemp(prefix="ytmp3-cookies-")
+            os.chmod(tmpdir, 0o700)
+            target = Path(tmpdir) / "cookies.txt"
+            # Create it 0600 before yt-dlp writes, so it is never briefly
+            # world-readable on a permissive umask.
+            os.close(os.open(target, os.O_CREAT | os.O_WRONLY, 0o600))
+            proc = subprocess.run(
+                [
+                    YTDLP,
+                    "--cookies-from-browser", browser,
+                    "--cookies", str(target),
+                    "--skip-download",
+                    "--no-warnings",
+                    "--ignore-errors",
+                    "ytsearch0:cookie-export",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=120,
+                check=False,
+            )
+            if target.stat().st_size > 0:
+                path = str(target)
+                atexit.register(shutil.rmtree, tmpdir, True)
+            else:
+                shutil.rmtree(tmpdir, ignore_errors=True)
+                tail = (proc.stderr or "").strip().splitlines()[-1:]
+                if tail:
+                    print(f"cookie export failed, falling back: {tail[0]}", file=sys.stderr)
+        except (OSError, subprocess.SubprocessError):
+            path = ""
+
+        _COOKIE_EXPORTS[browser] = path
+        return path
+
+
 def cookie_args(cookies_from_browser: str = "", cookies_file: str = "") -> list[str]:
     """yt-dlp authentication flags.
 
@@ -58,6 +128,9 @@ def cookie_args(cookies_from_browser: str = "", cookies_file: str = "") -> list[
     if cookies_file:
         return ["--cookies", cookies_file]
     if cookies_from_browser:
+        exported = _export_browser_cookies(cookies_from_browser)
+        if exported:
+            return ["--cookies", exported]
         return ["--cookies-from-browser", cookies_from_browser]
     return []
 
