@@ -39,6 +39,45 @@ class Fetched:
     thumbnail: Path | None
 
 
+# yt-dlp reports the *cause* as a warning and the *symptom* as the error, so
+# the last few lines of stderr -- all a failure used to quote -- are the least
+# informative part of it. "HTTP Error 403: Forbidden" is what a rotated cookie
+# jar looks like from the bottom of the log; the sentence that tells you to go
+# re-export your cookies is thirty lines further up.
+_DIAGNOSES: tuple[tuple[str, str], ...] = (
+    (
+        "cookies are no longer valid",
+        "the exported YouTube cookies have been rotated by the browser -- open a "
+        "private window, sign in to YouTube, close that tab (not the window), then "
+        "re-run; see yt-dlp's 'Exporting YouTube cookies' wiki page",
+    ),
+    (
+        "sign in to confirm you",
+        "YouTube served a bot check -- pass --cookies-from-browser BROWSER, or the "
+        "cookies you passed are not signed in",
+    ),
+    (
+        "http error 429",
+        "YouTube is rate-limiting this machine -- wait before retrying, and lower "
+        "--concurrency",
+    ),
+    (
+        "requested format is not available",
+        "no audio-only format was offered, which usually means the player response "
+        "came back without a PO token",
+    ),
+)
+
+
+def _diagnose(output: str) -> str:
+    """The actionable line hiding above the error, if there is one."""
+    haystack = output.lower()
+    for needle, hint in _DIAGNOSES:
+        if needle in haystack:
+            return hint
+    return ""
+
+
 def _run(cmd: list[str], timeout: int, what: str) -> subprocess.CompletedProcess[str]:
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, check=False)
@@ -47,8 +86,13 @@ def _run(cmd: list[str], timeout: int, what: str) -> subprocess.CompletedProcess
     except subprocess.TimeoutExpired as exc:
         raise EncodeError(f"{what} timed out after {timeout}s") from exc
     if proc.returncode != 0:
-        tail = (proc.stderr or proc.stdout or "").strip().splitlines()[-4:]
-        raise EncodeError(f"{what} failed (exit {proc.returncode}): {' / '.join(tail)}")
+        output = proc.stderr or proc.stdout or ""
+        tail = output.strip().splitlines()[-4:]
+        message = f"{what} failed (exit {proc.returncode}): {' / '.join(tail)}"
+        hint = _diagnose(output)
+        if hint:
+            message = f"{message}\n  -> {hint}"
+        raise EncodeError(message)
     return proc
 
 
@@ -85,8 +129,12 @@ def _export_browser_cookies(browser: str) -> str:
             os.chmod(tmpdir, 0o700)
             target = Path(tmpdir) / "cookies.txt"
             # Create it 0600 before yt-dlp writes, so it is never briefly
-            # world-readable on a permissive umask.
-            os.close(os.open(target, os.O_CREAT | os.O_WRONLY, 0o600))
+            # world-readable on a permissive umask -- and seed the Netscape
+            # header, because `--cookies` is an input as much as an output:
+            # yt-dlp loads the file first and refuses an empty one.
+            fd = os.open(target, os.O_CREAT | os.O_WRONLY, 0o600)
+            with os.fdopen(fd, "w") as fh:
+                fh.write("# Netscape HTTP Cookie File\n")
             proc = subprocess.run(
                 [
                     YTDLP,
@@ -102,7 +150,14 @@ def _export_browser_cookies(browser: str) -> str:
                 timeout=120,
                 check=False,
             )
-            if target.stat().st_size > 0:
+            # The header we seeded is always there, so size proves nothing;
+            # what counts is whether any actual cookie line landed under it.
+            written = sum(
+                1
+                for line in target.read_text(encoding="utf-8", errors="replace").splitlines()
+                if line.strip() and not line.startswith("#")
+            )
+            if written:
                 path = str(target)
                 atexit.register(shutil.rmtree, tmpdir, True)
             else:
@@ -157,7 +212,9 @@ def fetch_audio(
             YTDLP,
             "-f", "bestaudio/best",
             "--no-playlist",
-            "--no-warnings",
+            # Warnings stay on here, unlike everywhere else: this is the one
+            # command whose warnings explain its failures. Output is captured,
+            # so nothing reaches the user unless the download actually fails.
             "--write-info-json",
             "--write-thumbnail",
             "--sponsorblock-remove", SPONSORBLOCK_CATEGORIES,
