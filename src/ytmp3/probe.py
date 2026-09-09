@@ -31,8 +31,12 @@ from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import quote
 
 from .models import Candidate
+from .ratelimit import LIMITER, looks_throttled
 
 YTDLP = shutil.which("yt-dlp") or "yt-dlp"
+
+# A 429 says "later", not "no", so it is the one failure worth trying again.
+THROTTLE_RETRIES = 2
 
 SEARCH_TIMEOUT = 90
 
@@ -41,8 +45,9 @@ SEARCH_TIMEOUT = 90
 LIST_TIMEOUT = 60
 DETAIL_TIMEOUT = 60
 
-# Detail lookups are latency, not CPU: eight in flight keeps a twelve-result
-# search inside two round-trips of wall time without hammering YouTube.
+# Detail lookups are latency, not CPU, so they get more threads than there is
+# budget for requests: the global limiter decides how many actually run at once,
+# and these threads exist so a freed slot is taken immediately.
 DETAIL_WORKERS = 8
 
 # The opaque `sp=` parameter YouTube Music itself puts on the URL when you
@@ -126,10 +131,8 @@ class Cancel:
             self._procs.discard(proc)
 
 
-def _run(args: list[str], timeout: int, cancel: Cancel | None = None) -> str:
-    if cancel is not None:
-        cancel.check()
-
+def _spawn(args: list[str], timeout: int, cancel: Cancel | None) -> tuple[int, str, str]:
+    """One yt-dlp run, killable and time-boxed. Returns (exit, stdout, stderr)."""
     try:
         proc = subprocess.Popen(
             [YTDLP, *args],
@@ -152,19 +155,56 @@ def _run(args: list[str], timeout: int, cancel: Cancel | None = None) -> str:
         if cancel is not None:
             cancel._unregister(proc)
 
-    # A killed process exits non-zero with nothing useful on stderr; report it
-    # as cancellation rather than as a yt-dlp failure the user should read.
-    if cancel is not None and cancel.cancelled:
-        raise Cancelled("search cancelled")
+    return proc.returncode, stdout, stderr
 
-    # --ignore-errors means a non-zero exit can still come with perfectly good
-    # results for the other entries, so the exit code alone is not the signal.
-    # Only a run that produced no JSON at all counts as a failure -- but that
-    # failure must be reported, not silently returned as "no results found".
-    if proc.returncode != 0 and "{" not in stdout:
+
+def _run(args: list[str], timeout: int, cancel: Cancel | None = None) -> str:
+    """Run yt-dlp under the global rate limit, retrying if it gets throttled.
+
+    Every request in the process -- one search's or a bulk run's hundredth --
+    is spaced by the same limiter, because YouTube's budget is per-client and
+    does not care which search a request belongs to.
+
+    A 429 is worth retrying because it is a statement about timing rather than
+    about the request. Anything else is not, and is raised on the first try.
+    """
+    last_error = ""
+
+    for attempt in range(THROTTLE_RETRIES + 1):
+        if cancel is not None:
+            cancel.check()
+
+        with LIMITER.slot():
+            if cancel is not None:
+                cancel.check()
+            returncode, stdout, stderr = _spawn(args, timeout, cancel)
+
+        # A killed process exits non-zero with nothing useful on stderr; report
+        # it as cancellation rather than as a yt-dlp failure the user should read.
+        if cancel is not None and cancel.cancelled:
+            raise Cancelled("search cancelled")
+
+        throttled = looks_throttled(stderr)
+        if throttled:
+            # Slow everyone down, not just this caller: the budget is shared,
+            # so a 429 here is a warning about the next request anywhere.
+            LIMITER.penalize()
+
+        # --ignore-errors means a non-zero exit can still come with perfectly
+        # good results for the other entries, so the exit code alone is not the
+        # signal. Only a run that produced no JSON at all counts as a failure --
+        # but that failure must be reported, not silently returned as "no
+        # results found".
+        if "{" in stdout or returncode == 0:
+            return stdout
+
         tail = (stderr or "").strip().splitlines()[-2:]
-        raise ProbeError(f"yt-dlp search failed (exit {proc.returncode}): {' / '.join(tail)}")
-    return stdout
+        last_error = f"yt-dlp search failed (exit {returncode}): {' / '.join(tail)}"
+
+        if not throttled or attempt == THROTTLE_RETRIES:
+            raise ProbeError(last_error)
+
+    raise ProbeError(last_error)  # pragma: no cover - loop always returns or raises
 
 
 def parse_dump_json(stdout: str) -> list[Candidate]:
@@ -221,7 +261,8 @@ def _list_args(cookies_from_browser: str = "", cookies_file: str = "") -> list[s
     return [
         *_cookie_args(cookies_from_browser, cookies_file),
         "--dump-json",
-        "--no-warnings",
+        # Warnings stay on: a 429 arrives as one, and the limiter can
+        # only react to what it is allowed to see. stderr is captured.
         "--ignore-errors",
         "--skip-download",
         "--flat-playlist",
@@ -233,7 +274,8 @@ def _detail_args(cookies_from_browser: str = "", cookies_file: str = "") -> list
     return [
         *_cookie_args(cookies_from_browser, cookies_file),
         "--dump-json",
-        "--no-warnings",
+        # Warnings stay on: a 429 arrives as one, and the limiter can
+        # only react to what it is allowed to see. stderr is captured.
         "--ignore-errors",
         "--skip-download",
         "--no-playlist",

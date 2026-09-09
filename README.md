@@ -40,6 +40,7 @@ already threw away. `--cbr320` gives constant 320kbps if a player needs it;
 ytmp3                        # TUI (default)
 ytmp3 search four tet        # print catalog matches
 ytmp3 web bicep glue         # search YouTube for anything, ranked (no download)
+ytmp3 bulk wishlist.txt      # search a file of queries, review, then download
 ytmp3 status                 # what's downloaded, what's missing
 ytmp3 get csirac             # download the best catalog match
 ytmp3 sync                   # download everything not already on disk
@@ -99,6 +100,34 @@ manual pick · `↓` downloading · `✂` trimming · `♪` done · `✗` failed
 When ranking can't confidently choose, a modal lists the candidates with their
 scores and the reasons behind them; `esc` skips the track.
 
+## A whole wishlist at once
+
+`ytmp3 bulk wishlist.txt` searches a file of queries and shows you every match
+before anything downloads. One query per line; blank lines and lines starting
+with `#` are ignored, repeats are dropped, and the file's order is kept.
+
+```
+── bulk ⌕ 5 queries ─────────────────────────────────────────────────────
+ ✓  four tet baby        Four Tet · Baby              4:04 · 1.2M · score 335
+ ?  bicep glue           BICEP · Glue                 top two within 40 · 7 alts
+ ✓  Ninajirachi - CSIRAC Ninajirachi · CSIRAC         4:21 · 890K · score 335
+ ✗  aphex twin xtal      —                            no results
+```
+
+Ranking's confident picks arrive already ticked and its doubtful ones do not,
+because the work is confirming the handful it was unsure about rather than
+re-approving the obvious. `space` takes or skips the row under the cursor,
+`enter` opens the ranked alternatives, `ctrl+a` / `ctrl+d` take or skip
+everything, and `ctrl+r` downloads what is ticked -- straight into the same
+pipeline `sync` uses, catalog entry included.
+
+Searches run concurrently, but every yt-dlp request in the process -- one
+search's or a bulk run's hundredth -- passes through one global limiter: at
+most four in flight, spaced by at least a quarter second, and widened
+automatically if a 429 slips through. YouTube answers 429 for a while once it
+starts, so the fastest bulk run is the one that never triggers it. Five queries
+take about a minute.
+
 ## Authentication (required for downloads)
 
 YouTube answers anonymous download requests with *"Sign in to confirm you're
@@ -123,7 +152,7 @@ Verify with `yt-dlp -v <url> 2>&1 | grep "JS runtimes"` — it should not say `n
 ## Testing
 
 ```bash
-uv run python -m pytest -q          # 169 tests, no network
+uv run python -m pytest -q          # 216 tests, no network
 uv run python -m pytest -q -m network   # live YouTube (~10s a query)
 ```
 
@@ -151,10 +180,13 @@ src/ytmp3/
   discover.py   free-text web search -> Track         (parsing is pure)
   catalog.py    catalog JSON + already-on-disk scan
   cache.py      session memo for repeated web searches (pure)
+  ratelimit.py  one global throttle for every yt-dlp request (pure)
+  bulk.py       a file of queries -> per-query verdicts (parsing is pure)
   probe.py      yt-dlp search (YT Music + YouTube): list flat, hydrate wide
   encode.py     fetch, silence probe, single transcode
   pipeline.py   orchestration, 3 tracks at a time
   app.py        Textual TUI
+  bulkapp.py    Textual review screen for a bulk run
   cli.py        argparse entry point
 ```
 

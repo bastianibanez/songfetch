@@ -14,7 +14,7 @@ AUTH := --music-dir "$(MUSIC_DIR)" --cookies-from-browser $(BROWSER) \
         --limit $(LIMIT) --concurrency $(CONCURRENCY)
 
 .DEFAULT_GOAL := tui
-.PHONY: tui sync status search web test check help
+.PHONY: tui sync status search web bulk test check help
 
 tui:  ## open the TUI (default)
 	$(RUN) $(AUTH) tui
@@ -32,6 +32,10 @@ search:  ## catalog search, offline:  make search Q="four tet"
 web:  ## ranked YouTube search, no download:  make web Q="bicep glue"
 	@test -n "$(Q)" || { echo 'usage: make web Q="bicep glue"' >&2; exit 2; }
 	$(RUN) $(AUTH) web $(Q)
+
+bulk:  ## search a file of queries, review, download:  make bulk F=wishlist.txt
+	@test -n "$(F)" || { echo 'usage: make bulk F=wishlist.txt' >&2; exit 2; }
+	$(RUN) $(AUTH) bulk "$(F)"
 
 test:  ## the offline suite
 	uv run python -m pytest -q

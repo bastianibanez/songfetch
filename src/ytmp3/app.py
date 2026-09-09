@@ -51,20 +51,34 @@ class CandidatePicker(ModalScreen[Candidate | None]):
 
     BINDINGS = [Binding("escape", "skip", "Skip this track")]
 
-    def __init__(self, job: DownloadJob) -> None:
+    def __init__(
+        self,
+        candidates: list[ScoredCandidate],
+        title: str = "",
+        subtitle: str = "",
+    ) -> None:
         super().__init__()
-        self.job = job
+        self.candidates = candidates
+        self.title_text = title
+        self.subtitle = subtitle or "pick the right upload"
+
+    @classmethod
+    def for_job(cls, job: DownloadJob) -> CandidatePicker:
+        return cls(
+            job.candidates,
+            f"{job.track.title} — {job.track.artist}",
+            job.message,
+        )
 
     def compose(self) -> ComposeResult:
         with Vertical(id="picker"):
             yield Static(
-                f"[b]{self.job.track.title}[/b] — {self.job.track.artist}\n"
-                f"[dim]{self.job.message or 'pick the right upload'}[/dim]",
+                f"[b]{self.title_text}[/b]\n[dim]{self.subtitle}[/dim]",
                 id="picker-title",
             )
             options = [
                 Option(self._describe(s), id=str(i))
-                for i, s in enumerate(self.job.candidates)
+                for i, s in enumerate(self.candidates)
             ]
             yield OptionList(*options, id="picker-list")
             yield Static("[dim]enter = pick   esc = skip this track[/dim]")
@@ -81,7 +95,7 @@ class CandidatePicker(ModalScreen[Candidate | None]):
 
     def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
         index = int(event.option.id or 0)
-        self.dismiss(self.job.candidates[index].candidate)
+        self.dismiss(self.candidates[index].candidate)
 
     def action_skip(self) -> None:
         self.dismiss(None)
@@ -429,7 +443,7 @@ class YtMp3App(App[None]):
         async def chooser(job: DownloadJob):
             if not job.candidates:
                 return None
-            return await self.push_screen_wait(CandidatePicker(job))
+            return await self.push_screen_wait(CandidatePicker.for_job(job))
 
         await run_all(jobs, self.opts, progress, chooser)
         for job in jobs:

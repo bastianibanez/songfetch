@@ -49,6 +49,13 @@ def build_parser() -> argparse.ArgumentParser:
     w = sub.add_parser("web", help="search YouTube for anything, ranked (no download)")
     w.add_argument("query", nargs="+")
 
+    b = sub.add_parser(
+        "bulk",
+        help="search a file of queries, review every match, then download the ones you keep",
+    )
+    b.add_argument("file", type=Path, metavar="FILE",
+                   help="one query per line; blank lines and #-comments ignored")
+
     g = sub.add_parser("get", help="download the catalog tracks matching a query")
     g.add_argument("query", nargs="+")
     g.add_argument("--top", type=int, default=1, help="how many matches to take")
@@ -107,6 +114,23 @@ def main(argv: list[str] | None = None) -> int:
         from .app import YtMp3App
 
         YtMp3App(opts).run()
+        return 0
+
+    if command == "bulk":
+        # Before the catalog check, like `web`: a bulk list is by definition a
+        # set of things the catalog does not have yet.
+        from .bulk import read_query_file
+        from .bulkapp import review
+
+        try:
+            queries = read_query_file(args.file)
+        except OSError as exc:
+            print(f"cannot read {args.file}: {exc}", file=sys.stderr)
+            return 2
+        if not queries:
+            print(f"no queries in {args.file}", file=sys.stderr)
+            return 1
+        review(queries, opts)
         return 0
 
     if command == "web":
