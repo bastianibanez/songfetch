@@ -36,3 +36,7 @@ songs/
 
 # Runtime catalog (user library state, not source)
 /catalog.json
+
+# Your own bulk wishlist. wishlist.example.txt documents the format and is
+# tracked; the real one is a personal list, like the catalog above.
+/wishlist.txt

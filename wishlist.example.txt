@@ -1,0 +1,31 @@
+# A bulk wishlist. Run it with:
+#
+#     ytmp3 bulk wishlist.example.txt
+#     make bulk F=wishlist.example.txt
+#
+# One query per line. Blank lines and lines starting with # are ignored,
+# repeats are dropped, and the order here is the order on the review screen.
+
+# Plain "artist title" is enough -- the query goes to YouTube Music as written.
+bicep glue
+four tet baby
+overmono so u kno
+
+# "Artist - Title" also works, and it does one thing more: if the upload title
+# turns out to be bare ("Glue" on a Topic channel with no artist field), the
+# artist is taken from here rather than left empty on the tag.
+Ninajirachi - CSIRAC
+Fred again.. - Marea (we've lost dancing)
+
+# Name the version you want and the ranking stops penalising it. Without
+# "extended" in the query, "(Extended Mix)" reads as a variant you did not ask
+# for and loses to the original.
+ANOTR Paradise extended mix
+Bicep - Glue (Ejeca Remix)
+
+# A trailing # is part of the query, not a comment -- only a line that *starts*
+# with # is one. This searches for the track called "Glue #1".
+# bicep glue #1
+
+# Nothing here is special-cased: these are the same queries the search box
+# takes, so anything that works with `ytmp3 web` works in a wishlist.

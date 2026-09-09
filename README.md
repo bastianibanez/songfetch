@@ -105,6 +105,7 @@ scores and the reasons behind them; `esc` skips the track.
 `ytmp3 bulk wishlist.txt` searches a file of queries and shows you every match
 before anything downloads. One query per line; blank lines and lines starting
 with `#` are ignored, repeats are dropped, and the file's order is kept.
+`wishlist.example.txt` is a working file that documents the format.
 
 ```
 ── bulk ⌕ 5 queries ─────────────────────────────────────────────────────
