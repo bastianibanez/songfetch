@@ -44,23 +44,50 @@ ytmp3 bulk wishlist.txt      # search a file of queries, review, then download
 ytmp3 status                 # what's downloaded, what's missing
 ytmp3 get csirac             # download the best catalog match
 ytmp3 sync                   # download everything not already on disk
+ytmp3 playlist URL           # download every track from a YouTube Music playlist
 ```
 
 Useful flags: `--music-dir`, `--cbr320`, `--keep-source`, `--force-trim`,
 `--concurrency`, `--overwrite`, `--no-web-fallback`, `--cookies-from-browser`.
 
+### Download a YouTube Music playlist
+
+```bash
+uv run ytmp3 --cookies-from-browser chrome --music-dir ~/Music playlist \
+  'https://music.youtube.com/playlist?list=PLAYLIST_ID'
+```
+
+Paste the playlist's share URL in quotes. YouTube playlist URLs and watch URLs
+with a `list` parameter also work. MP3s go into
+`<music-dir>/playlists/<playlist-id>/`, numbered in playlist order. Repeated
+tracks keep their own positions. An identical rerun skips existing MP3s
+unless you pass `--overwrite` before `playlist`.
+
+The command downloads the other tracks if an entry is unavailable or fails,
+then exits with an error status so you can retry. For a private playlist, use
+the browser session of an account that can open it.
+
+In the TUI (`make`), open **Playlists** with the mouse or `Ctrl+T`. Paste the URL
+and press Enter or choose **Download**. The progress bar and track table show
+what was saved, what was already on disk, and which tracks failed. Move to a
+track to read its details. You can return to **Songs** with `Ctrl+T` while the
+playlist downloads.
+
 ## TUI keys
 
 | Key | Action |
 |---|---|
-| type | filter the catalog (title / artist / album) |
-| `↓` | move from the search box into the results |
+| `ctrl+t` | switch between Songs and Playlists |
+| `tab` / `shift+tab` | move between controls |
+| type in Songs | filter the catalog by title, artist, or album |
+| paste a URL in Playlists + `enter` | download the whole playlist |
+| `↓` | move from the active input into the track table |
 | `space` | toggle selection on the highlighted row |
 | `enter` | download selection (or the highlighted row) |
-| `esc` | back to the search box |
+| `esc` | return from the track table to the active input |
 | `ctrl+a` / `ctrl+d` | select all shown / clear selection |
 | `ctrl+f` | search the web for what's in the box |
-| `ctrl+r` | download selection from anywhere |
+| `ctrl+r` | download the selected songs or the playlist in the active tab |
 | `ctrl+q` | quit |
 
 ## Searching beyond the catalog
@@ -94,8 +121,8 @@ for the fields ranking needs. Repeating a query inside the same session is
 free, and typing over an in-flight search kills its yt-dlp processes rather
 than leaving them running against the query you already abandoned.
 
-Status column: `·` pending · `✓` already on disk · `⋯` searching · `?` needs a
-manual pick · `↓` downloading · `✂` trimming · `♪` done · `✗` failed.
+The Status column labels each stage, from **Ready** to **Saved**. Highlight
+a song to see its album and details, including any download error.
 
 When ranking can't confidently choose, a modal lists the candidates with their
 scores and the reasons behind them; `esc` skips the track.

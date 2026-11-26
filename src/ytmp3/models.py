@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, asdict
 from enum import Enum
+from pathlib import Path
 from typing import Any
 
 
@@ -145,6 +146,7 @@ class DownloadJob:
     candidates: list[ScoredCandidate] = field(default_factory=list)
     output_path: str = ""
     trim_offset: float = 0.0
+    destination: Path | None = None
 
     @property
     def glyph(self) -> str:

@@ -70,7 +70,7 @@ def download_one(job: DownloadJob, opts: Options, progress: ProgressFn = _noop) 
     if job.chosen is None:
         raise ValueError("download_one requires job.chosen")
 
-    dest = Path(opts.music_dir) / f"{job.track.filename_stem}.mp3"
+    dest = job.destination or Path(opts.music_dir) / f"{job.track.filename_stem}.mp3"
     if dest.exists() and not opts.overwrite:
         job.state = JobState.ON_DISK
         job.output_path = str(dest)
@@ -101,7 +101,7 @@ def download_one(job: DownloadJob, opts: Options, progress: ProgressFn = _noop) 
         )
 
         if opts.keep_source:
-            kept = Path(opts.music_dir) / f"{job.track.filename_stem}{fetched.audio.suffix}"
+            kept = dest.with_suffix(fetched.audio.suffix)
             kept.write_bytes(fetched.audio.read_bytes())
 
     job.state = JobState.DONE

@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 from .catalog import resolve_catalog, scan_existing
@@ -56,6 +57,9 @@ def build_parser() -> argparse.ArgumentParser:
     b.add_argument("file", type=Path, metavar="FILE",
                    help="one query per line; blank lines and #-comments ignored")
 
+    playlist = sub.add_parser("playlist", help="download a complete YouTube Music playlist")
+    playlist.add_argument("url", metavar="URL")
+
     g = sub.add_parser("get", help="download the catalog tracks matching a query")
     g.add_argument("query", nargs="+")
     g.add_argument("--top", type=int, default=1, help="how many matches to take")
@@ -97,12 +101,35 @@ def _run_jobs(jobs: list[DownloadJob], opts: Options) -> int:
     failed = [j for j in jobs if j.state is JobState.FAILED]
     stuck = [j for j in jobs if j.state is JobState.AMBIGUOUS]
     done = [j for j in jobs if j.state is JobState.DONE]
-    print(f"\ndone {len(done)}  ambiguous {len(stuck)}  failed {len(failed)}")
+    on_disk = sum(j.state is JobState.ON_DISK for j in jobs)
+    print(f"\ndone {len(done)}  on disk {on_disk}  ambiguous {len(stuck)}  failed {len(failed)}")
     for job in stuck:
         print(f"  ? {job.track.artist} - {job.track.title} (run the TUI to choose)")
     for job in failed:
         print(f"  ✗ {job.track.artist} - {job.track.title}: {job.message}")
     return 1 if failed else 0
+
+
+def _download_playlist(url: str, opts: Options) -> int:
+    from .playlist import PlaylistLink, playlist_jobs
+    from .probe import ProbeError
+
+    link = PlaylistLink.parse(url)
+    if link is None:
+        print("expected a YouTube Music or YouTube playlist URL with a list parameter",
+              file=sys.stderr)
+        return 2
+
+    print(f"loading playlist {link.id}", flush=True)
+    try:
+        jobs, unavailable = playlist_jobs(link, opts)
+    except ProbeError as exc:
+        print(f"cannot list playlist: {exc}", file=sys.stderr)
+        return 1
+    for position in unavailable:
+        print(f"  ✗ playlist entry {position} is unavailable", file=sys.stderr)
+    result = _run_jobs(jobs, replace(opts, music_dir=link.directory(opts.music_dir)))
+    return 1 if unavailable else result
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -115,6 +142,9 @@ def main(argv: list[str] | None = None) -> int:
 
         YtMp3App(opts).run()
         return 0
+
+    if command == "playlist":
+        return _download_playlist(args.url, opts)
 
     if command == "bulk":
         # Before the catalog check, like `web`: a bulk list is by definition a

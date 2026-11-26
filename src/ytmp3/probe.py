@@ -24,6 +24,7 @@ Same query, ten seconds.
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import subprocess
 import threading
@@ -285,6 +286,42 @@ def _detail_args(cookies_from_browser: str = "", cookies_file: str = "") -> list
         "--ignore-no-formats-error",
         "--no-flat-playlist",
     ]
+
+
+def list_playlist(
+    url: str, cookies_from_browser: str = "", cookies_file: str = ""
+) -> list[Candidate | None]:
+    """List all playlist entries in order, including unavailable positions."""
+    args = [
+        "--ignore-config",
+        *_cookie_args(cookies_from_browser, cookies_file),
+        "--flat-playlist",
+        "--yes-playlist",
+        "--dump-single-json",
+        "--skip-download",
+        url,
+    ]
+    stdout = _run(args, SEARCH_TIMEOUT)
+    try:
+        data = json.loads(stdout)
+    except json.JSONDecodeError as exc:
+        raise ProbeError("yt-dlp did not return valid playlist JSON") from exc
+    entries = data.get("entries") if isinstance(data, dict) else None
+    if not isinstance(entries, list):
+        raise ProbeError("yt-dlp did not return a playlist")
+
+    tracks = []
+    for entry in entries:
+        video_id = entry.get("id") if isinstance(entry, dict) else None
+        if not isinstance(video_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]{11}", video_id):
+            tracks.append(None)
+            continue
+        tracks.append(Candidate.from_ytdlp({
+            **entry,
+            "title": entry.get("title") or video_id,
+            "webpage_url": f"https://www.youtube.com/watch?v={video_id}",
+        }))
+    return tracks
 
 
 def _music_page(query: str, songs_only: bool = True) -> str:

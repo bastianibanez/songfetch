@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
+
 import pytest
 
-from ytmp3 import pipeline
+from ytmp3 import pipeline, probe
 from ytmp3.app import WEB_DEBOUNCE, YtMp3App
 from ytmp3.catalog import load_catalog
 from ytmp3.models import Candidate, JobState, ScoredCandidate
@@ -101,6 +103,76 @@ async def test_enqueue_runs_the_pipeline(opts, monkeypatch):
 
     assert seen == [["csirac"]]
     assert app.jobs["csirac"].state is JobState.DONE
+
+
+async def test_submitting_playlist_url_downloads_from_the_tui(tmp_path, monkeypatch):
+    opts = Options(music_dir=tmp_path, cookies_from_browser="chrome")
+    candidate = Candidate("firstVideo1", "Artist - Song", "https://www.youtube.com/watch?v=firstVideo1")
+    requested = []
+    downloaded = []
+    started = asyncio.Event()
+    finish = asyncio.Event()
+
+    def list_playlist(url, browser, cookies_file):
+        requested.append((url, browser, cookies_file))
+        return [candidate, None, candidate]
+
+    async def run_all(jobs, options, progress):
+        assert options is opts
+        jobs[0].state = JobState.DOWNLOADING
+        progress(jobs[0])
+        started.set()
+        await finish.wait()
+        for job in jobs:
+            assert job.chosen == candidate
+            downloaded.append(job.destination.relative_to(tmp_path))
+            job.state = JobState.DONE
+            progress(job)
+
+    monkeypatch.setattr(probe, "list_playlist", list_playlist)
+    monkeypatch.setattr("ytmp3.app.run_all", run_all)
+    app = YtMp3App(opts)
+    async with app.run_test() as pilot:
+        app.query_one("#search").value = "csirac"
+        await pilot.press("ctrl+t")
+        assert app.focused.id == "playlist-url"
+        app.query_one("#playlist-url").value = "https://example.com/list"
+        await pilot.press("enter")
+        assert "playlist ID" in str(app.query_one("#playlist-status").content)
+        app.query_one("#playlist-url").value = (
+            "https://music.youtube.com/playlist?list=PL_example&si=share"
+        )
+        await pilot.pause()
+        assert app._web_timer is None
+        await pilot.click("#download-playlist")
+        await asyncio.wait_for(started.wait(), timeout=2)
+        assert app.query_one("#download-playlist").disabled
+        app.query_one("#playlist-url").focus()
+        await pilot.press("ctrl+t")
+        assert app.focused.id == "search"
+        assert app.query_one("#search").value == "csirac"
+        assert app.visible_ids == ["csirac"]
+        finish.set()
+        await app.workers.wait_for_complete()
+        await pilot.click("#--content-tab-playlists")
+        assert app.focused.id == "playlist-url"
+        status = str(app.query_one("#playlist-status").content)
+        assert "Playlist 3/3" in status
+        assert "1 unavailable" in status
+        table = app.query_one("#playlist-results")
+        assert table.row_count == 3
+        assert str(table.get_cell("1", "state")) == "Saved"
+        assert str(table.get_cell("2", "state")) == "Unavailable"
+        await pilot.press("down", "down")
+        assert "playable track" in str(app.query_one("#playlist-detail").content)
+        await pilot.press("escape")
+        assert app.focused.id == "playlist-url"
+
+    assert requested == [("https://music.youtube.com/playlist?list=PL_example", "chrome", "")]
+    assert [path.as_posix() for path in downloaded] == [
+        "playlists/PL_example/0001 - Artist - Song [firstVideo1].mp3",
+        "playlists/PL_example/0003 - Artist - Song [firstVideo1].mp3",
+    ]
 
 
 async def test_on_disk_tracks_are_marked(tmp_path):

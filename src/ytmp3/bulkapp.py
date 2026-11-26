@@ -15,9 +15,9 @@ from pathlib import Path
 from textual import work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.widgets import DataTable, Footer, Header, Static
+from textual.widgets import DataTable, Footer, Static
 
-from .app import CandidatePicker, _fmt_duration, _fmt_views
+from .app import SONGFETCH_THEME, TABLE_CSS, CandidatePicker, _fmt_duration, _fmt_views
 from .bulk import SKIP, TAKE, BulkResult, bulk_search
 from .catalog import add_tracks, resolve_catalog
 from .models import DownloadJob, JobState
@@ -33,16 +33,8 @@ GLYPH_ASK = "?"
 class BulkReviewApp(App[None]):
     """One row per query: the match, the score, and whether it is going to download."""
 
-    CSS = """
-    Screen { layout: vertical; }
-    #status { dock: bottom; height: 1; color: $text-muted; padding: 0 1; }
-    DataTable { height: 1fr; }
-    #picker {
-        width: 90%; height: 80%;
-        border: round $accent; background: $surface; padding: 1 2;
-    }
-    #picker-title { height: auto; padding-bottom: 1; }
-    """
+    TITLE = "songfetch · Wishlist"
+    CSS = TABLE_CSS
 
     # Deliberately none of these are `priority`, unlike the main TUI's. Priority
     # bindings outrank the focused widget *and* any modal on top, so a priority
@@ -60,6 +52,8 @@ class BulkReviewApp(App[None]):
 
     def __init__(self, queries: list[str], opts: Options) -> None:
         super().__init__()
+        self.register_theme(SONGFETCH_THEME)
+        self.theme = SONGFETCH_THEME.name
         self.opts = opts
         self.queries = queries
         # One slot per query, filled in as searches land. Index is the row key,
@@ -73,17 +67,20 @@ class BulkReviewApp(App[None]):
     # -- layout ------------------------------------------------------------
 
     def compose(self) -> ComposeResult:
-        yield Header(show_clock=False)
+        yield Static("♫  songfetch  /  Wishlist", classes="app-banner")
+        yield Static("↑/↓  Move   ·   Space  Take or skip   ·   Enter  Choose an upload",
+                     classes="help-line")
         yield DataTable(id="results", cursor_type="row", zebra_stripes=True)
-        yield Static("", id="status")
+        yield Static("", id="wishlist-detail", classes="row-detail", markup=False)
+        yield Static("", id="status", classes="status-strip")
         yield Footer()
 
     def on_mount(self) -> None:
         table = self.query_one(DataTable)
         table.add_column(" ", key="state", width=3)
-        table.add_column("Query", key="query", width=34)
-        table.add_column("Match", key="match", width=46)
-        table.add_column("Note", key="note")
+        table.add_column("Query", key="query", width=25)
+        table.add_column("Match", key="match", width=32)
+        table.add_column("Note", key="note", width=20)
         for i, query in enumerate(self.queries):
             table.add_row(GLYPH_SEARCHING, query, "", "searching…", key=str(i))
         table.focus()
@@ -143,6 +140,20 @@ class BulkReviewApp(App[None]):
         table.update_cell(str(index), "state", glyph)
         table.update_cell(str(index), "match", match)
         table.update_cell(str(index), "note", note)
+        if index == self._current():
+            self._show_detail()
+
+    def on_data_table_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
+        self._show_detail()
+
+    def _show_detail(self) -> None:
+        index = self._current()
+        if index is None:
+            return
+        row = self.query_one(DataTable).get_row_at(index)
+        self.query_one("#wishlist-detail", Static).update(
+            " · ".join(str(value) for value in row[1:] if value)
+        )
 
     @staticmethod
     def _describe(result: BulkResult) -> tuple[str, str, str]:
@@ -328,6 +339,7 @@ class BulkReviewApp(App[None]):
             table.update_cell(str(index), "state", job.glyph)
             if job.message:
                 table.update_cell(str(index), "note", job.message)
+        self._show_detail()
 
 
 def review(queries: list[str], opts: Options) -> None:
